@@ -1,589 +1,555 @@
 "use client";
 
-import Image from "next/image";
 import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Sun, Moon, Menu, X, Mail, Phone,
+  Linkedin, Github, ExternalLink, Code
+} from "lucide-react";
 
-export default function Home() {
+// ───────────────────────────────────────────────
+// Custom Brand Icons (Inline SVGs)
+// ───────────────────────────────────────────────
+const BrandIcons = {
+  NextJs: ({ className }: { className?: string }) => (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm-1.8-5.8l-4.8-6.2V16h-1.4V8h1.4l4.8 6.2V8h1.4v8h-1.4zM16.4 16h-1.5l-4-5.2 4-5.2h1.5l-4 5.2 4 5.2z" />
+    </svg>
+  ),
+  Firebase: ({ className }: { className?: string }) => (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path d="M3.89 15.672L6.255.461a.542.542 0 011.026.155l-2.008 11.234 6.784-7.447a.542.542 0 01.936.425l-2.753 11.397L19.46 5.61a.54.54 0 01.937.287L13.12 22.28a.54.54 0 01-.98 0L3.89 15.672z" />
+    </svg>
+  ),
+  Tailwind: ({ className }: { className?: string }) => (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path d="M12.001 10.25c-1.74 0-3.056-.966-3.805-2.793-.722 1.76-2.022 2.662-3.882 2.662-1.636 0-2.858-.91-3.666-2.732.613 2.112 2.131 3.232 4.095 3.232 1.838 0 3.213-1.07 3.908-2.924.793 1.937 2.14 3.057 4.095 3.057 1.636 0 2.858-.91 3.666-2.732-.808 1.822-2.028 2.732-3.666 2.732-1.86 0-3.16-1.155-3.882-2.915-.749 1.827-2.065 2.793-3.805 2.793zm-6.058-2.585c-.958 0-1.74-.69-2.28-1.923.636 1.154 1.346 1.733 2.22 1.733.987 0 1.716-.62 2.115-1.684.512 1.144 1.258 1.817 2.28 1.817.958 0 1.74-.69 2.28-1.923-.636 1.154-1.346 1.733-2.22 1.733-.987 0-1.716-.62-2.115-1.684-.512 1.144-1.258 1.817-2.28 1.817z" />
+      <path d="M18.813 18.25c-1.74 0-3.056-.966-3.805-2.793-.722 1.76-2.022 2.662-3.882 2.662-1.636 0-2.858-.91-3.666-2.732.613 2.112 2.131 3.232 4.095 3.232 1.838 0 3.213-1.07 3.908-2.924.793 1.937 2.14 3.057 4.095 3.057 1.636 0 2.858-.91 3.666-2.732-.808 1.822-2.028 2.732-3.666 2.732-1.86 0-3.16-1.155-3.882-2.915-.749 1.827-2.065 2.793-3.805 2.793zm-6.058-2.585c-.958 0-1.74-.69-2.28-1.923.636 1.154 1.346 1.733 2.22 1.733.987 0 1.716-.62 2.115-1.684.512 1.144 1.258 1.817 2.28 1.817.958 0 1.74-.69 2.28-1.923-.636 1.154-1.346 1.733-2.22 1.733-.987 0-1.716-.62-2.115-1.684-.512 1.144-1.258 1.817-2.28 1.817z" />
+    </svg>
+  ),
+  Flutter: ({ className }: { className?: string }) => (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path d="M13.5 2.5L2.5 13.5l3.8 3.8 11-11v-3.8h-3.8zm-3.8 19l3.8 3.8h3.8l-5.7-5.7-1.9 1.9zM21.5 8.2l-8.3 8.3L15.1 20l10.2-10.2V6l-3.8 2.2z" />
+    </svg>
+  ),
+  React: ({ className }: { className?: string }) => (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 2.2c1.78 0 3.37.28 4.63.78C15.22 3.8 13.68 4.4 12 4.4c-1.68 0-3.22-.6-4.63-1.42 1.26-.5 2.85-.78 4.63-.78zm0 19.6c-1.78 0-3.37-.28-4.63-.78 1.41.82 2.95 1.42 4.63 1.42 1.68 0 3.22-.6 4.63-1.42-1.26.5-2.85.78-4.63.78zm5.95-3.3c-1.05 1.5-2.67 2.45-4.48 2.65.65-1.25 1.03-2.65 1.03-4.15 0-1.5-.38-2.9-1.03-4.15 1.81.2 3.43 1.15 4.48 2.65 1.1 1.55 1.1 3.45 0 5zM12 9.4c1.44 0 2.6 1.16 2.6 2.6s-1.16 2.6-2.6 2.6-2.6-1.16-2.6-2.6 1.16-2.6 2.6-2.6z" />
+    </svg>
+  ),
+  NodeJs: ({ className }: { className?: string }) => (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path d="M12 2L2 7.8v11.4L12 25l10-5.8V7.8L12 2zm0 2.1l7.8 4.5v9.1L12 22.2 4.2 17.7V8.6L12 4.1zM10.8 17h2.4v-4h3.6v-2h-3.6V9h-2.4v8z" />
+    </svg>
+  ),
+  TypeScript: ({ className }: { className?: string }) => (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path d="M2 2v20h20V2H2zm16.5 15h-2.5v-6h-2v6H11v-6H9v-2h7.5v2zm-8.5 0H7.5v-1.5c0-1.5-.5-2-2-2h-1v-2h1c.5 0 1 .2 1 .5v1h2v-1.5c0-1.5-1-2.5-3-2.5S2.5 7.5 2.5 9v1.5c0 1.5.5 2 2 2h1v2h-1c-.5 0-1-.2-1-.5v-1h-2v1.5c0 1.5 1 2.5 3 2.5s3-1 3-2.5V17z" />
+    </svg>
+  ),
+  JavaScript: ({ className }: { className?: string }) => (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path d="M2 2v20h20V2H2zm16.5 16h-2.5c0-1.5-1-2.5-2.5-2.5s-2.5 1-2.5 2.5v.5h-2v-.5c0-2.5 2-4 4.5-4s4.5 1.5 4.5 4h.5zm-8.5 0H7.5v-5h2.5v5z" />
+    </svg>
+  ),
+  Gemini: ({ className }: { className?: string }) => (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path d="M20.9 10.2c-.3-1.1-.9-2.1-1.7-2.9-.8-.8-1.9-1.4-3-1.6-.3-1.1-.9-2.1-1.7-2.9-.8-.8-1.9-1.4-3-1.6-1.1-.2-2.3 0-3.3.6-.9-.6-2-.9-3.1-.9-1.1 0-2.2.3-3.1.9-1.1.7-1.9 1.7-2.3 2.9-.4 1.2-.4 2.5 0 3.7.3 1.1.9 2.1 1.7 2.9.8.8 1.9 1.4 3 1.6.3 1.1.9 2.1 1.7 2.9.8.8 1.9 1.4 3 1.6 1.1.2 2.3 0 3.3-.6.9.6 2 .9 3.1.9 1.1 0 2.2-.3 3.1-.9 1.1-.7 1.9-1.7 2.3-2.9.4-1.2.4-2.5 0-3.7zM12 18.5c-3.6 0-6.5-2.9-6.5-6.5S8.4 5.5 12 5.5s6.5 2.9 6.5 6.5-2.9 6.5-6.5 6.5z" />
+    </svg>
+  ),
+  GoogleMaps: ({ className }: { className?: string }) => (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
+    </svg>
+  ),
+  Java: ({ className }: { className?: string }) => (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 16h-2v-2h2v2zm0-4h-2V6h2v8z" />
+    </svg>
+  )
+};
+
+export default function Portfolio() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [theme, setTheme] = useState<'light' | 'dark' | null>(null);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    // Check for saved theme preference or default to system preference
-    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
-    const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    const initialTheme = savedTheme || systemTheme;
+
+    const saved = localStorage.getItem('theme') as 'light' | 'dark' | null;
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+    const initialTheme = saved ?? (prefersDark ? 'dark' : 'light');
     setTheme(initialTheme);
-    if (initialTheme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+
+    // Sync class (mostly redundant but safe)
+    document.documentElement.classList.toggle('dark', initialTheme === 'dark');
   }, []);
 
+  // React to system theme changes (only when no manual preference saved)
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 50);
+    if (!mounted) return;
+
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+    const handleChange = (e: MediaQueryListEvent) => {
+      if (!localStorage.getItem('theme')) {
+        const newTheme = e.matches ? 'dark' : 'light';
+        setTheme(newTheme);
+        document.documentElement.classList.toggle('dark', e.matches);
+      }
     };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, [mounted]);
 
   const toggleTheme = () => {
+    if (!mounted || !theme) return;
+
     const newTheme = theme === 'light' ? 'dark' : 'light';
     setTheme(newTheme);
     localStorage.setItem('theme', newTheme);
-    if (newTheme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+    document.documentElement.classList.toggle('dark', newTheme === 'dark');
   };
+
+  const navLinks = ['About', 'Projects', 'Skills', 'Contact'];
+
   const projects = [
     {
-      title: "Hire Smart",
-      description: "Get the right candidate faster with Intelligent resume analysis with AI-powered candidate matching and screening.",
-      technologies: ["AI/ML", "React", "Firebase", "NLP"],
-      link: "https://hire-smart-e4245.web.app/",
-      image: "/projects/hiresmart.jpg"
+      title: "ParagonFi",
+      description: "Invest. Trade. Grow. From Crypto To Stocks",
+      tags: ["Crypto", "Stocks", "React", "Node.js", "Firebase", "Flutter"],
+      link: "https://paragonfi-web--paragonfi-5317b.us-central1.hosted.app/",
+      icon: <Code className="w-full h-full" />
     },
     {
-      title: "Clock In",
-      description: "Employee tracking system using geofencing technology to monitor and manage workforce attendance efficiently.",
-      technologies: ["Flutter", "Geofencing", "Firebase", "Maps API"],
-      link: "https://clock-in-1b305.web.app/",
-      image: "/projects/clockin.jpg"
+      title: "PadiPay",
+      description: "From quick transfers to bills payment, we make money move faster, smarter, and friendlier.",
+      tags: ["Finance", "React", "Node.js", "Firebase", "Flutter"],
+      link: "https://padipay.co",
+      icon: <Code className="w-full h-full" />
     },
     {
-      title: "Poetical",
-      description: "A social media platform dedicated to poets where they can share, discover, and connect through poetry.",
-      technologies: ["React", "Node.js", "MongoDB", "Socket.io"],
-      link: "https://poeticalpoems.web.app/",
-      image: "/projects/poetical.jpg"
+      title: "BorrowMe",
+      description: "Instant loans made easy.",
+      tags: ["React", "Node.js", "Firebase", "Flutter"],
+      link: "https://borrowme.com.ng/",
+      icon: <Code className="w-full h-full" />
     },
     {
       title: "Carfax Deals",
-      description: "Get accurate vehicle history reports from VIN numbers to make informed car purchasing decisions.",
-      technologies: ["React", "Next.js", "API Integration", "TypeScript"],
+      description: "Vehicle history aggregator fetching real-time data from VIN numbers to provide transparent deal analysis.",
+      tags: ["Next.js", "TypeScript", "Python", "Web Scraping",],
       link: "https://carfaxdeals.com/",
-      image: "/projects/carfax.jpg"
+      icon: <BrandIcons.NextJs className="w-full h-full" />
+    },
+    {
+      title: "Hire Smart",
+      description: "AI-powered resume analysis and candidate matching platform that streamlines the recruitment process using AI.",
+      tags: ["Gemini", "React", "Firebase", "AI", "Flutter"],
+      link: "https://hire-smart-e4245.web.app/",
+      icon: <BrandIcons.Gemini className="w-full h-full" />
+    },
+    {
+      title: "Clock In",
+      description: "Enterprise attendance system utilizing geofencing to ensure employees are physically present when clocking in.",
+      tags: ["Flutter", "Google Maps API", "Firebase"],
+      link: "https://clock-in-1b305.web.app/",
+      icon: <BrandIcons.GoogleMaps className="w-full h-full" />
     },
     {
       title: "EasiRent",
-      description: "Property rental platform for agents and vendors to post and manage rental properties efficiently.",
-      technologies: ["React", "Firebase", "Tailwind CSS", "Cloud Functions"],
+      description: "Comprehensive property management dashboard for landlords to track payments, tenants, and maintenance.",
+      tags: ["React", "Tailwind", "Cloud Functions"],
       link: "https://easirentpropertyventures.com/",
-      image: "/projects/easirent.jpg"
+      icon: <BrandIcons.Firebase className="w-full h-full" />
+    },
+  ];
+
+  const skillCategories = [
+    {
+      title: "Frontend",
+      skills: [
+        { name: "React", icon: <BrandIcons.React className="w-6 h-6" /> },
+        { name: "Next.js", icon: <BrandIcons.NextJs className="w-6 h-6" /> },
+        { name: "Tailwind", icon: <BrandIcons.Tailwind className="w-6 h-6" /> },
+        { name: "Flutter", icon: <BrandIcons.Flutter className="w-6 h-6" /> },
+        { name: "TypeScript", icon: <BrandIcons.TypeScript className="w-6 h-6" /> },
+      ]
     },
     {
-      title: "BetGenius",
-      description: "Sports scores prediction platform helping users make informed betting decisions with data analytics.",
-      technologies: ["React", "Sports API", "Firebase", "Machine Learning"],
-      link: "https://betgeniussite.web.app/",
-      image: "/projects/betgenius.jpg"
+      title: "Backend",
+      skills: [
+        { name: "Node.js", icon: <BrandIcons.NodeJs className="w-6 h-6" /> },
+        { name: "Firebase", icon: <BrandIcons.Firebase className="w-6 h-6" /> },
+        { name: "Java", icon: <BrandIcons.Java className="w-6 h-6" /> },
+      ]
     },
     {
-      title: "Numxy",
-      description: "Cross-platform app for purchasing non-VOIP numbers for use across WhatsApp, Telegram, Facebook and more.",
-      technologies: ["Flutter", "Dart", "Firebase", "Payment Gateway"],
-      link: "https://peony-6f946.web.app/",
-      image: "/projects/numxy.jpg"
-    },
-    {
-      title: "Peepz",
-      description: "Dating app that helps users meet, create forms, join clubs and build meaningful connections.",
-      technologies: ["Flutter", "Firebase", "Real-time Database", "Cloud Storage"],
-      link: "https://peepzdating.web.app/",
-      image: "/projects/peepz.jpg"
-    },
-    {
-      title: "Lo-e",
-      description: "Location-based business directory for Mexico, fully bilingual in Spanish and English.",
-      technologies: ["React", "i18n", "Maps API", "Firebase"],
-      link: "https://mundotlaxcala.web.app/",
-      image: "/projects/loe.jpg"
-    },
-    {
-      title: "Kwicky",
-      description: "E-Commerce platform with User and Vendor apps, Admin website, supporting 5 languages including Arabic, Bengali, English, Hindi, and Spanish.",
-      technologies: ["Flutter", "React", "i18n", "Firebase", "Stripe"],
-      link: "https://kwicky.ng/",
-      image: "/projects/kwicky.jpg"
+      title: "Essentials",
+      skills: [
+        { name: "JavaScript", icon: <BrandIcons.JavaScript className="w-6 h-6" /> },
+        { name: "Git", icon: <Github className="w-6 h-6" /> },
+        { name: "AI Integration", icon: <BrandIcons.Gemini className="w-6 h-6" /> },
+      ]
     }
   ];
 
-  const skills = {
-    "Languages": ["Java", "Dart", "C#", "JavaScript", "TypeScript"],
-    "Frontend": ["React", "Next.js", "Flutter", "HTML/CSS", "Tailwind CSS"],
-    "Backend & Tools": ["Node.js", ".NET", "REST APIs", "Firebase"],
-    "AI & Automation": ["AI Integration", "Automation Tools", "Git", "CI/CD"]
-  };
+  if (!mounted || !theme) {
+    return <div className="min-h-screen bg-white dark:bg-[#030712]" />;
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className={`
+      min-h-screen
+      bg-[var(--color-background)]
+      text-[var(--color-foreground)]
+      transition-colors duration-300
+      font-sans
+      selection:bg-blue-600 selection:text-white
+    `}>
+
+      {/* Background Decor Elements */}
+      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-blue-500/5 dark:bg-blue-600/4 rounded-full blur-[120px]" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-purple-500/5 dark:bg-purple-600/4 rounded-full blur-[120px]" />
+      </div>
+
       {/* Navigation */}
-      <nav className={`fixed top-0 w-full backdrop-blur-md z-50 transition-all duration-300 ${
-        scrolled 
-          ? 'bg-white/90 dark:bg-gray-900/90 shadow-lg' 
-          : 'bg-white/70 dark:bg-gray-900/70 shadow-sm'
-      }`}>
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <a href="#" className="text-xl font-bold text-blue-600 dark:text-blue-400">Portfolio</a>
-            
-            {/* Desktop Menu */}
+      <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${scrolled
+        ? 'bg-[var(--color-background)]/95 dark:bg-[var(--color-background)]/95 backdrop-blur-xl border-b border-[var(--color-divider)] shadow-sm'
+        : 'bg-transparent'
+        }`}>
+        <div className="max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-20 bg-[var(--color-background)]/95 dark:bg-[var(--color-background)]/95">
+            <a href="#" className="text-2xl font-bold tracking-tight hover:text-blue-600 dark:hover:text-blue-400 transition-colors relative group">
+              EFE OTEGA
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-600 dark:bg-blue-400 transition-all group-hover:w-full"></span>
+            </a>
+
             <div className="hidden md:flex items-center space-x-8">
-              <a href="#about" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition">About</a>
-              <a href="#projects" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition">Projects</a>
-              <a href="#skills" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition">Skills</a>
-              <a href="#contact" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition">Contact</a>
-              
-              {/* Theme Toggle */}
+              {navLinks.map((item) => (
+                <a
+                  key={item}
+                  href={`#${item.toLowerCase()}`}
+                  className="text-sm font-medium text-[var(--color-text-secondary)] hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                >
+                  {item}
+                </a>
+              ))}
+
               <button
                 onClick={toggleTheme}
-                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                className="p-2 rounded-full hover:bg-[var(--color-hover)] transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
                 aria-label="Toggle theme"
               >
-                {theme === 'light' ? (
-                  <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                  </svg>
-                ) : (
-                  <svg className="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                  </svg>
-                )}
+                {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
               </button>
             </div>
 
-            {/* Mobile Menu Button & Theme Toggle */}
-            <div className="md:hidden flex items-center space-x-2">
+            <div className="md:hidden flex items-center space-x-4">
               <button
                 onClick={toggleTheme}
-                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                className="p-2 text-[var(--color-foreground)]"
                 aria-label="Toggle theme"
               >
-                {theme === 'light' ? (
-                  <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                  </svg>
-                ) : (
-                  <svg className="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                  </svg>
-                )}
+                {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
               </button>
-              
-              <button 
+              <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition"
-                aria-label="Toggle menu"
+                className="p-2 text-[var(--color-foreground)]"
               >
-                <svg 
-                  className="w-6 h-6 text-gray-700 dark:text-gray-300" 
-                  fill="none" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  strokeWidth="2" 
-                  viewBox="0 0 24 24" 
-                  stroke="currentColor"
-                >
-                  {mobileMenuOpen ? (
-                    <path d="M6 18L18 6M6 6l12 12" />
-                  ) : (
-                    <path d="M4 6h16M4 12h16M4 18h16" />
-                  )}
-                </svg>
+                {mobileMenuOpen ? <X className="w-7 h-7" /> : <Menu className="w-7 h-7" />}
               </button>
             </div>
           </div>
-
-          {/* Mobile Menu */}
-          {mobileMenuOpen && (
-            <div className="md:hidden py-4 border-t border-gray-200 dark:border-gray-700">
-              <div className="flex flex-col space-y-4">
-                <a 
-                  href="#about" 
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition px-2 py-1"
-                >
-                  About
-                </a>
-                <a 
-                  href="#projects" 
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition px-2 py-1"
-                >
-                  Projects
-                </a>
-                <a 
-                  href="#skills" 
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition px-2 py-1"
-                >
-                  Skills
-                </a>
-                <a 
-                  href="#contact" 
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition px-2 py-1"
-                >
-                  Contact
-                </a>
-              </div>
-            </div>
-          )}
         </div>
+
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="md:hidden bg-[var(--color-background)] border-b border-[var(--color-divider)] overflow-hidden"
+            >
+              <div className="px-4 py-6 space-y-5">
+                {navLinks.map((item) => (
+                  <a
+                    key={item}
+                    href={`#${item.toLowerCase()}`}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block text-lg font-medium text-[var(--color-text-primary)] hover:text-blue-600 dark:hover:text-blue-400"
+                  >
+                    {item}
+                  </a>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-blue-950 -z-10"></div>
-        <div className="absolute top-20 left-10 w-72 h-72 bg-blue-400/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-20 right-10 w-96 h-96 bg-purple-400/10 rounded-full blur-3xl animate-pulse" style={{animationDelay: '1s'}}></div>
-        
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center animate-fade-in">
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-gray-900 dark:text-white mb-6 animate-slide-up">
-              Hi, I'm <span className="bg-gradient-to-r from-blue-600 via-blue-500 to-purple-600 dark:from-blue-400 dark:via-blue-300 dark:to-purple-400 text-transparent bg-clip-text animate-gradient">Efeoghene Otega</span>
-            </h1>
-            <p className="text-xl sm:text-2xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto animate-slide-up" style={{animationDelay: '0.2s'}}>
-              I code in Java, Dart, C#, JavaScript, React. I love automation with AI and I am also a private tutor for software development
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center animate-slide-up" style={{animationDelay: '0.4s'}}>
-              <a 
-                href="#projects" 
-                className="px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-300 font-medium shadow-lg hover:shadow-xl hover:scale-105 transform"
-              >
-                View My Work
-              </a>
-              <a 
-                href="#contact" 
-                className="px-8 py-3 border-2 border-blue-600 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-gray-800 transition-all duration-300 font-medium hover:scale-105 transform hover:border-blue-700"
-              >
-                Get In Touch
-              </a>
-            </div>
+      <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto flex flex-col items-center text-center">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="relative z-10"
+        >
+          <div className="inline-block px-5 py-2 mb-8 rounded-full border border-blue-200 dark:border-transparent bg-blue-600 dark:bg-blue-950/40 text-blue-700 dark:text-white text-sm font-semibold tracking-wide uppercase">
+            Full Stack Developer
           </div>
-        </div>
+          <h1 className="text-5xl sm:text-7xl font-extrabold tracking-tight mb-8 text-[var(--color-text-primary)]">
+            Building digital <br className="hidden sm:block" />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-500 dark:from-blue-400 dark:to-cyan-300">
+              experiences that matter.
+            </span>
+          </h1>
+          <p className="md:text-xl text-[var(--color-text-secondary)] mb-12 max-w-2xl mx-auto leading-relaxed">
+            I’m Efeoghene Otega, a software developer specializing in web development, mobile apps, backends, and AI integration.
+            I craft accessible, pixel-perfect, and performant applications.
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-5 justify-center items-center">
+            <a
+              href="#projects"
+              className="w-full sm:w-auto px-9 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all transform hover:-translate-y-1"
+            >
+              View My Work
+            </a>
+            <a
+              href="#contact"
+              className="w-full sm:w-auto px-9 py-4 bg-white dark:bg-slate-800 border border-[var(--color-border)] hover:border-blue-500 dark:hover:border-blue-500 text-[var(--color-text-primary)] dark:text-white rounded-xl font-semibold transition-all hover:bg-[var(--color-hover)] flex items-center justify-center gap-2"
+            >
+              <Mail className="w-5 h-5" /> Contact Me
+            </a>
+          </div>
+        </motion.div>
       </section>
 
       {/* About Section */}
-      <section id="about" className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 relative overflow-hidden">
-        <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4 text-center">About Me</h2>
-          <p className="text-center text-gray-600 dark:text-gray-300 mb-12">A bit about my work history</p>
-          
-          <div className="grid lg:grid-cols-2 gap-12 mb-16">
-            <div>
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Work Timeline</h3>
-              <div className="space-y-6">
-                <div className="border-l-4 border-blue-600 pl-6 pb-6">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2">
-                    <h4 className="text-xl font-bold text-gray-900 dark:text-white">Software Developer</h4>
-                    <span className="text-sm text-blue-600 dark:text-blue-400 font-medium">July 2025 - Present</span>
-                  </div>
-                  <p className="text-gray-600 dark:text-gray-300 font-medium">All Good Technologies</p>
-                </div>
-                
-                <div className="border-l-4 border-blue-600 pl-6 pb-6">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2">
-                    <h4 className="text-xl font-bold text-gray-900 dark:text-white">Mobile App Development Instructor</h4>
-                    <span className="text-sm text-blue-600 dark:text-blue-400 font-medium">2022 - 2024</span>
-                  </div>
-                  <p className="text-gray-600 dark:text-gray-300 font-medium">NIIT Abuja</p>
-                </div>
+      <section id="about" className="py-10 relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="grid lg:grid-cols-2 gap-16 items-center"
+          >
+            <div className="order-2 lg:order-1">
+              <h2 className="text-4xl md:text-5xl font-bold mb-8 text-[var(--color-text-primary)]">
+                About Me
+              </h2>
+              <div className="space-y-7 text-lg text-[var(--color-text-secondary)] leading-relaxed">
+                <p className="text-[16px] md:text-xl">
+                  I'm a passionate software developer with a knack for solving complex problems.
+                  My journey began with a curiosity for how things work, which led me to the world of coding.
+                </p>
+                <p className="text-[16px] md:text-xl">
+                  Currently, I work <span className="font-semibold text-blue-600 dark:text-blue-400">Freelance</span>,
+                  where I focus on sharpening my skills, honing them to make better future-proof applications.
+                </p>
+                <p className="text-[16px] md:text-xl">
+                  When I'm not coding.....I'm still thinking about writing code.
+                  Taking breaks with nature documentaries.
+                </p>
+              </div>
+              <div className="flex flex-col">
+                <h2 className="mt-20 pt-8 text-3xl border-t border-[var(--color-divider)] md:text-5xl font-bold mb-8 text-[var(--color-text-primary)]">
+                  Professional Summary
+                </h2>
+                <div className="flex flex-wrap gap-12">
 
-                <div className="border-l-4 border-blue-600 pl-6 pb-6">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2">
-                    <h4 className="text-xl font-bold text-gray-900 dark:text-white">Web Development Instructor</h4>
-                    <span className="text-sm text-blue-600 dark:text-blue-400 font-medium">2022 - 2024</span>
+                  <div>
+                    <h4 className="text-2xl md:text-5xl font-bold text-[var(--color-text-primary)]">5+</h4>
+                    <p className="text-[var(--color-text-muted)] mt-1">Years Exp.</p>
                   </div>
-                  <p className="text-gray-600 dark:text-gray-300 font-medium">NIIT Abuja</p>
-                </div>
-
-                <div className="border-l-4 border-blue-600 pl-6 pb-6">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2">
-                    <h4 className="text-xl font-bold text-gray-900 dark:text-white">Java Programming Instructor</h4>
-                    <span className="text-sm text-blue-600 dark:text-blue-400 font-medium">2022 - 2024</span>
+                  <div>
+                    <h4 className="text-2xl md:text-5xl font-bold text-[var(--color-text-primary)]">10+</h4>
+                    <p className="text-[var(--color-text-muted)] mt-1">Projects</p>
                   </div>
-                  <p className="text-gray-600 dark:text-gray-300 font-medium">NIIT Abuja</p>
-                </div>
-
-                <div className="border-l-4 border-blue-600 pl-6">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2">
-                    <h4 className="text-xl font-bold text-gray-900 dark:text-white">UI/UX Design Instructor</h4>
-                    <span className="text-sm text-blue-600 dark:text-blue-400 font-medium">2022 - 2024</span>
+                  <div>
+                    <h4 className="text-2xl md:text-5xl font-bold text-[var(--color-text-primary)]">2,000+</h4>
+                    <p className="text-[var(--color-text-muted)] mt-1">Commits</p>
                   </div>
-                  <p className="text-gray-600 dark:text-gray-300 font-medium">NIIT Abuja</p>
                 </div>
               </div>
+
             </div>
-
-            <div>
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Skills</h3>
-              <div className="space-y-4">
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <span className="font-semibold text-gray-900 dark:text-white">Java</span>
-                    <span className="text-blue-600 dark:text-blue-400 font-medium">95%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
-                    <div className="bg-blue-600 h-3 rounded-full" style={{width: '95%'}}></div>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <span className="font-semibold text-gray-900 dark:text-white">Flutter</span>
-                    <span className="text-blue-600 dark:text-blue-400 font-medium">95%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
-                    <div className="bg-blue-600 h-3 rounded-full" style={{width: '95%'}}></div>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <span className="font-semibold text-gray-900 dark:text-white">AI Integration</span>
-                    <span className="text-blue-600 dark:text-blue-400 font-medium">95%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
-                    <div className="bg-blue-600 h-3 rounded-full" style={{width: '95%'}}></div>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <span className="font-semibold text-gray-900 dark:text-white">Javascript</span>
-                    <span className="text-blue-600 dark:text-blue-400 font-medium">90%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
-                    <div className="bg-blue-600 h-3 rounded-full" style={{width: '90%'}}></div>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <span className="font-semibold text-gray-900 dark:text-white">UI/UX Design</span>
-                    <span className="text-blue-600 dark:text-blue-400 font-medium">90%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
-                    <div className="bg-blue-600 h-3 rounded-full" style={{width: '90%'}}></div>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <span className="font-semibold text-gray-900 dark:text-white">C#</span>
-                    <span className="text-blue-600 dark:text-blue-400 font-medium">85%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
-                    <div className="bg-blue-600 h-3 rounded-full" style={{width: '85%'}}></div>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <span className="font-semibold text-gray-900 dark:text-white">React</span>
-                    <span className="text-blue-600 dark:text-blue-400 font-medium">80%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
-                    <div className="bg-blue-600 h-3 rounded-full" style={{width: '80%'}}></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">Services</h3>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 rounded-xl p-6 text-center hover:shadow-xl transition-all duration-300 hover:-translate-y-1 transform border border-transparent hover:border-blue-200 dark:hover:border-blue-900 group">
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-700 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
-                  </svg>
-                </div>
-                <h4 className="text-lg font-bold text-gray-900 dark:text-white">UI/UX Design</h4>
-              </div>
-
-              <div className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 rounded-xl p-6 text-center hover:shadow-xl transition-all duration-300 hover:-translate-y-1 transform border border-transparent hover:border-blue-200 dark:hover:border-blue-900 group">
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-700 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-                  </svg>
-                </div>
-                <h4 className="text-lg font-bold text-gray-900 dark:text-white">Web Development</h4>
-              </div>
-
-              <div className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 rounded-xl p-6 text-center hover:shadow-xl transition-all duration-300 hover:-translate-y-1 transform border border-transparent hover:border-blue-200 dark:hover:border-blue-900 group">
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-700 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <h4 className="text-lg font-bold text-gray-900 dark:text-white">Native App Development</h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">Mobile, Web & Desktop</p>
-              </div>
-
-              <div className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 rounded-xl p-6 text-center hover:shadow-xl transition-all duration-300 hover:-translate-y-1 transform border border-transparent hover:border-blue-200 dark:hover:border-blue-900 group">
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-700 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <h4 className="text-lg font-bold text-gray-900 dark:text-white">Cross Platform Development</h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">Mobile, Web & Desktop</p>
-              </div>
-            </div>
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* Projects Section */}
-      <section id="projects" className="py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4 text-center">My Projects</h2>
-          <p className="text-center text-gray-600 dark:text-gray-300 mb-12 max-w-2xl mx-auto">
-            A showcase of 10+ applications I've built, ranging from AI-powered platforms to e-commerce solutions and social apps.
-          </p>
+      <section id="projects" className="py-10 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-5xl font-bold text-[var(--color-text-primary)] mb-5">Featured Work</h2>
+            <p className="text-[var(--color-text-secondary)] text-[16px] md:text-xl max-w-2xl mx-auto text-lg">
+              A selection of my recent work, ranging from everyday office software to enterprise financial software
+            </p>
+          </div>
+
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {projects.map((project, index) => (
-              <div key={index} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 group hover:-translate-y-2 transform">
-                <div className="h-48 relative overflow-hidden bg-gray-100 dark:bg-gray-700">
-                  <iframe 
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: index * 0.08 }}
+                className="group relative bg-[var(--color-card)] border border-[var(--color-border)] rounded-2xl overflow-hidden hover:shadow-2xl hover:shadow-blue-500/15 dark:hover:shadow-blue-500/10 transition-all duration-300 flex flex-col h-full cursor-pointer"
+                onClick={() => window.open(project.link, "_blank", "noopener,noreferrer")}
+              >
+                <div className="relative w-full aspect-[5/3] sm:aspect-video bg-slate-50 dark:bg-slate-950/70 border-b border-[var(--color-border)] overflow-hidden">
+                  <iframe
                     src={project.link}
-                    className="w-full h-full pointer-events-none scale-[0.5] origin-top-left transition-transform duration-300 group-hover:scale-[0.55]"
-                    style={{ width: '200%', height: '200%' }}
-                    title={`${project.title} preview`}
+                    title={`${project.title} live preview`}
                     loading="lazy"
+                    allow="fullscreen"
+                    className="absolute inset-0 w-full h-full border-0 scale-[1] origin-top-left pointer-events-none"
+                    sandbox="allow-scripts allow-same-origin"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent group-hover:from-black/40 transition-all duration-300"></div>
+
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-end p-5">
+                    <ExternalLink className="w-7 h-7 text-white drop-shadow-lg" />
+                  </div>
                 </div>
-                <div className="p-6">
-                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{project.title}</h3>
-                  <p className="text-gray-600 dark:text-gray-300 mb-4">{project.description}</p>
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {project.technologies.map((tech, i) => (
-                      <span key={i} className="px-3 py-1 bg-gradient-to-r from-blue-100 to-blue-50 dark:from-blue-900 dark:to-blue-800 text-blue-600 dark:text-blue-300 rounded-full text-sm hover:scale-110 transform transition-transform duration-200 cursor-default shadow-sm">
-                        {tech}
+
+                <div className="p-4 md:p-7 flex flex-col flex-grow">
+                  <h3 className="text-2xl mt-4 font-bold text-[var(--color-text-primary)] mb-3 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                    {project.title}
+                  </h3>
+
+                  <p className="text-[var(--color-text-secondary)] text-[14px] md:text-xl mb-6 flex-grow text-base leading-relaxed">
+                    {project.description}
+                  </p>
+
+                  <div className="flex flex-wrap gap-2 mt-auto">
+                    {project.tags.map((tag, i) => (
+                      <span
+                        key={i}
+                        className="px-3.5 py-1 bg-[var(--color-hover)] text-[var(--color-text-muted)] rounded-full text-xs font-medium border border-[var(--color-border)]"
+                      >
+                        {tag}
                       </span>
                     ))}
                   </div>
-                  <a 
-                    href={project.link}
-                    target="_blank"
-                    rel="noopener noreferrer" 
-                    className="text-blue-600 dark:text-blue-400 hover:underline font-medium inline-flex items-center group/link transition-colors"
-                  >
-                    View Project <span className="ml-1 group-hover/link:translate-x-1 transition-transform duration-200">→</span>
-                  </a>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
       </section>
 
       {/* Skills Section */}
-      <section id="skills" className="py-20 px-4 sm:px-6 lg:px-8 bg-white dark:bg-gray-800">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4 text-center">Skills & Technologies</h2>
-          <p className="text-center text-gray-600 dark:text-gray-300 mb-12 max-w-2xl mx-auto">
-            Technologies and tools I use to bring ideas to life
-          </p>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {Object.entries(skills).map(([category, techs], index) => (
-              <div key={index} className="bg-gray-50 dark:bg-gray-900 rounded-xl p-6">
-                <h3 className="text-xl font-bold text-blue-600 dark:text-blue-400 mb-4">{category}</h3>
-                <ul className="space-y-2">
-                  {techs.map((tech, i) => (
-                    <li key={i} className="text-gray-700 dark:text-gray-300 flex items-center">
-                      <span className="w-2 h-2 bg-blue-600 dark:bg-blue-400 rounded-full mr-3"></span>
-                      {tech}
-                    </li>
+      <section id="skills" className="py-24 border-y border-[var(--color-divider)]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="mb-16 md:text-center max-w-3xl mx-auto">
+            <h2 className="text-4xl md:text-5xl font-bold text-[var(--color-text-primary)] mb-6">Technical Arsenal</h2>
+            <p className="text-[var(--color-text-secondary)] md:text-lg">
+              My expertise spans the entire development lifecycle, from robust backend systems to immersive frontend experiences.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {skillCategories.map((category, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: idx * 0.1 }}
+                className="bg-[var(--color-hover)] dark:bg-slate-800/40 rounded-2xl p-8 border border-[var(--color-border)]"
+              >
+                <h3 className="text-2xl font-bold text-[var(--color-text-primary)] mb-7 flex items-center gap-3">
+                  <span className="w-2.5 h-9 bg-blue-500 rounded-full"></span>
+                  {category.title}
+                </h3>
+                <div className="space-y-5">
+                  {category.skills.map((skill, sIdx) => (
+                    <div key={sIdx} className="flex items-center gap-4 group">
+                      <div className="text-3xl text-[var(--color-text-muted)] group-hover:text-blue-500 transition-colors w-9 h-9 flex items-center justify-center">
+                        {skill.icon}
+                      </div>
+                      <span className="font-medium text-[var(--color-text-primary)] text-lg">{skill.name}</span>
+                    </div>
                   ))}
-                </ul>
-              </div>
+                </div>
+              </motion.div>
             ))}
           </div>
         </div>
       </section>
 
       {/* Contact Section */}
-      <section id="contact" className="py-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-blue-950 -z-10"></div>
-        <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">Let's Work Together</h2>
-          <p className="text-xl text-gray-600 dark:text-gray-300 mb-8">
-            Want to create something amazing? I'm your guy. Get in touch.
-          </p>
-          
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 mb-8 hover:shadow-2xl transition-shadow duration-300 border border-gray-100 dark:border-gray-700">
-            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Get in touch</h3>
-            <div className="space-y-4 text-left max-w-md mx-auto">
-              <div className="flex items-center gap-3">
-                <svg className="w-6 h-6 text-blue-600 dark:text-blue-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Email</p>
-                  <a href="mailto:efeogheneotega@gmail.com" className="text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 font-medium">
-                    efeogheneotega@gmail.com
-                  </a>
-                </div>
+      <section id="contact" className="py-24">
+        <div className="max-w-4xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl p-8 sm:p-12 text-center text-white shadow-2xl overflow-hidden relative"
+          >
+            <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+
+            <div className="relative z-10">
+              <h2 className="text-3xl sm:text-4xl font-bold mb-6">Ready to start a project?</h2>
+              <p className="text-blue-100 md:text-lg mb-10 max-w-2xl mx-auto">
+                I'm currently available for freelance projects and open to new opportunities.
+                Let's discuss how we can build something great together.
+              </p>
+
+              <div className="flex flex-col sm:flex-row justify-center gap-6">
+                <a
+                  href="mailto:efeogheneotega@gmail.com"
+                  className="flex items-center justify-center gap-3 px-8 py-4 bg-white text-blue-600 rounded-xl font-bold hover:bg-blue-50 transition-colors shadow-lg"
+                >
+                  <Mail className="w-5 h-5" />
+                  Send Email
+                </a>
+                <a
+                  href="tel:+2347089963599"
+                  className="flex items-center justify-center gap-3 px-8 py-4 bg-blue-700/50 border border-blue-400/30 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors backdrop-blur-sm"
+                >
+                  <Phone className="w-5 h-5" />
+                  Call Me
+                </a>
               </div>
-              <div className="flex items-center gap-3">
-                <svg className="w-6 h-6 text-blue-600 dark:text-blue-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                </svg>
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Phone</p>
-                  <a href="tel:+2347089963599" className="text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 font-medium">
-                    +234 708 996 3599
-                  </a>
-                </div>
+
+              <div className="mt-12 flex justify-center gap-6">
+                <a href="https://linkedin.com/in/efeogheneotega" target="_blank" rel="noreferrer" className="p-3 bg-white/10 rounded-full hover:bg-white/20 transition-colors">
+                  <Linkedin className="w-6 h-6" />
+                </a>
+                <a href="https://github.com/efeotega" target="_blank" rel="noreferrer" className="p-3 bg-white/10 rounded-full hover:bg-white/20 transition-colors">
+                  <Github className="w-6 h-6" />
+                </a>
               </div>
             </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a 
-              href="mailto:efeogheneotega@gmail.com" 
-              className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
-            >
-              Email Me
-            </a>
-            <a 
-              href="https://linkedin.com/in/efeogheneotega" 
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-8 py-3 border-2 border-blue-600 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-gray-800 transition font-medium"
-            >
-              LinkedIn
-            </a>
-            <a 
-              href="https://github.com/efeotega" 
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-8 py-3 border-2 border-blue-600 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-gray-800 transition font-medium"
-            >
-              GitHub
-            </a>
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-white dark:bg-gray-800 py-8 px-4 sm:px-6 lg:px-8 border-t border-gray-200 dark:border-gray-700">
-        <div className="max-w-6xl mx-auto text-center">
-          <p className="text-gray-600 dark:text-gray-300">
-            © {new Date().getFullYear()} Efeoghene Otega. Built with Next.js & Tailwind CSS
-          </p>
+      <footer className="py-12 px-4 bg-[var(--color-background)]">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+         
+          <div className="mt-8 flex gap-8 text-sm text-[var(--color-text-secondary)]">
+            {navLinks.map(link => (
+              <a key={link} href={`#${link.toLowerCase()}`} className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">{link}</a>
+            ))}
+          </div>
+           <div className="text-center md:text-left">
+            <p className="text-sm text-[var(--color-text-muted)] mt-2">
+              © {new Date().getFullYear()} Efeoghene Otega. Built with React & Tailwind.
+            </p>
+          </div>
         </div>
       </footer>
     </div>
